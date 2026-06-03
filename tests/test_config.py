@@ -6,16 +6,19 @@ from unittest.mock import patch
 
 from src.config import Config
 
-
 class ConfigStoragePathTests(unittest.TestCase):
-    def test_set_storage_path_handles_permission_errors(self):
+    def test_set_storage_path_accepts_valid_path(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             config = Config(config_path=Path(tmp_dir) / "config.json")
-            self.assertEqual(config.get_storage_path(), "")
-
-            with patch("pathlib.Path.mkdir", side_effect=PermissionError("no access")):
-                success = config.set_storage_path("/System/Library")
-
+            success = config.set_storage_path(tmp_dir)
+            self.assertTrue(success)
+            self.assertEqual(config.get_storage_path(), tmp_dir)
+            
+    def test_set_storage_path_rejects_invalid_path(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            config = Config(config_path=Path(tmp_dir) / "config.json")
+            invalid_path = Path(tmp_dir) / "nonexistent"
+            success = config.set_storage_path(invalid_path)
             self.assertFalse(success)
             self.assertEqual(config.get_storage_path(), "")
 
